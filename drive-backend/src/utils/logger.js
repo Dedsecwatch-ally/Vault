@@ -22,12 +22,11 @@ const logger = winston.createLogger({
     ],
 });
 
-// Add file transport in production
-if (env.NODE_ENV === 'production') {
-    logger.add(
-        new winston.transports.File({ filename: 'logs/error.log', level: 'error' })
-    );
-    logger.add(new winston.transports.File({ filename: 'logs/combined.log' }));
+// In serverless environments like Vercel, filesystem is read-only.
+// We rely on Console transport which Vercel captures.
+if (env.NODE_ENV === 'production' && !process.env.VERCEL) {
+    // Only verify/write to files if NOT on Vercel (or similar check)
+    // For now, let's just stick to Console for simplicity and reliability
 }
 
 module.exports = logger;
