@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: drive_db
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - drive-net
+
+  backend:
+    build: ./drive-backend
+    container_name: drive_backend
+    restart: always
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env.docker
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+    networks:
+      - drive-net
+
+  frontend:
+    build: ./drive-frontend
+    container_name: drive_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "3001:3001"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:3000 # Use public URL for client-side fetches
+      - NEXT_PRIVATE_API_URL=http://backend:3000 # Internal URL if needed (optional)
+    networks:
+      - drive-net
+
+networks:
+  drive-net:
+    driver: bridge
+
+volumes:
+  postgres_data:

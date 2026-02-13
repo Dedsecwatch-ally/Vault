@@ -1,0 +1,24 @@
+# Optional: Only needed if you have an Ingress Controller (e.g., nginx-ingress)
+# If using Minikube, run: minikube addons enable ingress
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vault-api-ingress
+  namespace: vault
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"  # Match MAX_FILE_SIZE
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "120"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: vault-api.local  # Change to your domain
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: vault-api-service
+                port:
+                  number: 80
