@@ -1,4 +1,4 @@
-const multer = require('multer');
+const os = require('os');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const env = require('./env');
@@ -7,7 +7,12 @@ const ApiError = require('../utils/ApiError');
 // Storage configuration
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, env.UPLOAD_DIR);
+        // On Vercel (production) or when using S3, use temp dir for intermediate storage
+        if (env.STORAGE_PROVIDER === 's3' || env.NODE_ENV === 'production') {
+            cb(null, os.tmpdir());
+        } else {
+            cb(null, env.UPLOAD_DIR);
+        }
     },
     filename: (req, file, cb) => {
         // Generate unique filename with original extension
