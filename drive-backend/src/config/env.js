@@ -1,8 +1,10 @@
 const dotenv = require('dotenv');
 const path = require('path');
 
-// Load .env file
-dotenv.config({ path: path.join(__dirname, '../../.env') });
+// Load .env file (skip on Vercel — env vars are injected by the platform)
+if (!process.env.VERCEL) {
+    dotenv.config({ path: path.join(__dirname, '../../.env') });
+}
 
 const env = {
     // Server

@@ -1,30 +1,44 @@
 const os = require('os');
 const path = require('path');
+const multer = require('multer');
 const { v4: uuidv4 } = require('uuid');
 const env = require('./env');
 const ApiError = require('../utils/ApiError');
 
-// Storage configuration
+/**
+ * Storage Configuration
+ * - Uses tmp directory in production (e.g., Vercel/S3 uploads)
+ * - Uses local upload directory in development
+ */
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        // On Vercel (production) or when using S3, use temp dir for intermediate storage
-        if (env.STORAGE_PROVIDER === 's3' || env.NODE_ENV === 'production') {
-            cb(null, os.tmpdir());
-        } else {
-            cb(null, env.UPLOAD_DIR);
+        try {
+            if (env.STORAGE_PROVIDER === 's3' || env.NODE_ENV === 'production') {
+                cb(null, os.tmpdir());
+            } else {
+                cb(null, env.UPLOAD_DIR);
+            }
+        } catch (err) {
+            cb(err);
         }
     },
+
     filename: (req, file, cb) => {
-        // Generate unique filename with original extension
-        const ext = path.extname(file.originalname);
-        const uniqueName = `${uuidv4()}${ext}`;
-        cb(null, uniqueName);
+        try {
+            const ext = path.extname(file.originalname);
+            const uniqueName = `${uuidv4()}${ext}`;
+            cb(null, uniqueName);
+        } catch (err) {
+            cb(err);
+        }
     },
 });
 
-// File filter
+/**
+ * File Filter
+ * - Restricts allowed file types
+ */
 const fileFilter = (req, file, cb) => {
-    // Define allowed mime types (expand as needed)
     const allowedMimes = [
         'image/jpeg',
         'image/png',
@@ -48,12 +62,14 @@ const fileFilter = (req, file, cb) => {
     }
 };
 
-// Multer upload configuration
+/**
+ * Multer Upload Configuration
+ */
 const upload = multer({
     storage,
     fileFilter,
     limits: {
-        fileSize: env.MAX_FILE_SIZE,
+        fileSize: env.MAX_FILE_SIZE, // e.g. 10MB from env
     },
 });
 

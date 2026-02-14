@@ -48,13 +48,12 @@ const connectDB = async () => {
         logger.info('✅ PostgreSQL connected successfully');
 
         // Sync models in development (use migrations in production)
-        if (env.NODE_ENV === 'development') {
-            await sequelize.sync({ alter: true });
-            logger.info('✅ Database synced');
-        }
+        // Sync models (alter: true in dev, force: false in prod)
+        await sequelize.sync({ alter: env.NODE_ENV === 'development' });
+        logger.info('✅ Database synced');
     } catch (error) {
         logger.error('❌ Unable to connect to PostgreSQL:', error);
-        process.exit(1);
+        throw error; // Don't process.exit in serverless environments
     }
 };
 
