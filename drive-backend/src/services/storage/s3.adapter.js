@@ -117,6 +117,21 @@ class S3StorageAdapter {
     }
 
     /**
+     * Get a readable stream from S3 (supports byte ranges for video seeking)
+     */
+    async getStream(filename, options = {}) {
+        const key = this.getKey(filename);
+        const params = { Bucket: this.bucket, Key: key };
+
+        if (options.start !== undefined && options.end !== undefined) {
+            params.Range = `bytes=${options.start}-${options.end}`;
+        }
+
+        const response = await this.client.send(new GetObjectCommand(params));
+        return response.Body;
+    }
+
+    /**
      * Get signed URL for file
      */
     getUrl(filename) {

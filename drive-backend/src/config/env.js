@@ -27,7 +27,7 @@ const env = {
     // Storage
     STORAGE_PROVIDER: (process.env.STORAGE_PROVIDER || 'local').trim(), // 'local' or 's3'
     UPLOAD_DIR: (process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads')).trim(),
-    MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 50 * 1024 * 1024, // 50MB default
+    MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 500 * 1024 * 1024, // 500MB default (video support)
 
     // AWS S3 (optional)
     AWS_REGION: process.env.AWS_REGION?.trim(),

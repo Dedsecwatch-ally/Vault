@@ -565,3 +565,223 @@
     align-items: center;
     gap: 4px;
 }
+
+/* ---- File Preview Engine ---- */
+.previewOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 6, 10, 0.94);
+    backdrop-filter: blur(10px);
+    z-index: 500;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    animation: previewFadeIn 0.2s ease;
+}
+
+.previewHeader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    z-index: 510;
+    background: linear-gradient(to bottom, rgba(5, 6, 10, 0.6), transparent);
+}
+
+.previewTitle {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50%;
+}
+
+.previewActions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.previewBtn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    transition: all var(--transition-fast);
+    cursor: pointer;
+    border: none;
+    flex-shrink: 0;
+}
+
+.previewBtn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+}
+
+.previewBody {
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Image preview */
+.previewImage {
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: var(--radius-md);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    object-fit: contain;
+}
+
+/* Video preview */
+.previewVideo {
+    max-width: 90vw;
+    max-height: 80vh;
+    border-radius: var(--radius-md);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    outline: none;
+}
+
+/* Audio preview */
+.previewAudioWrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    padding: 40px 60px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+}
+
+.previewAudioIcon {
+    color: var(--accent);
+    opacity: 0.7;
+}
+
+.previewAudioName {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-primary);
+    max-width: 300px;
+    text-align: center;
+    word-break: break-word;
+}
+
+.previewAudio {
+    width: 340px;
+    max-width: 80vw;
+    outline: none;
+}
+
+/* PDF preview */
+.previewPdf {
+    width: 80vw;
+    height: 80vh;
+    border: none;
+    border-radius: var(--radius-md);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    background: #fff;
+}
+
+/* Text/code preview */
+.previewTextWrap {
+    width: min(80vw, 800px);
+    max-height: 80vh;
+    overflow: auto;
+    background: rgba(12, 14, 20, 0.95);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.previewTextContent {
+    padding: 20px 24px;
+    font-family: var(--font-mono), 'Fira Code', 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text-primary);
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    tab-size: 4;
+}
+
+.previewTextLoading {
+    padding: 40px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Unsupported type */
+.previewUnsupported {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 50px 60px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+}
+
+.previewUnsupportedIcon {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+.previewUnsupportedTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.previewUnsupportedSub {
+    font-size: 13px;
+    color: var(--text-muted);
+    max-width: 280px;
+}
+
+@keyframes previewFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 768px) {
+    .previewPdf {
+        width: 95vw;
+        height: 75vh;
+    }
+
+    .previewTextWrap {
+        width: 95vw;
+    }
+
+    .previewAudioWrap {
+        padding: 30px;
+    }
+}

@@ -40,10 +40,12 @@ const storage = multer.diskStorage({
  */
 const fileFilter = (req, file, cb) => {
     const allowedMimes = [
+        // Images
         'image/jpeg',
         'image/png',
         'image/gif',
         'image/webp',
+        // Documents
         'application/pdf',
         'application/msword',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
@@ -51,8 +53,22 @@ const fileFilter = (req, file, cb) => {
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'text/plain',
         'text/csv',
+        // Archives
         'application/zip',
         'application/x-rar-compressed',
+        // Video
+        'video/mp4',
+        'video/webm',
+        'video/quicktime',
+        'video/x-msvideo',
+        'video/x-matroska',
+        'video/ogg',
+        // Audio
+        'audio/mpeg',
+        'audio/wav',
+        'audio/ogg',
+        'audio/webm',
+        'audio/aac',
     ];
 
     if (allowedMimes.includes(file.mimetype)) {

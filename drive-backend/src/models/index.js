@@ -22,3 +22,5 @@ Share.belongsTo(User, { foreignKey: 'shared_by_id', as: 'sharedBy' });
 Share.belongsTo(User, { foreignKey: 'shared_with_id', as: 'sharedWith' });
 
 module.exports = { User, File, Folder, Share };
+
+

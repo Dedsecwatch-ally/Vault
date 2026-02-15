@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
@@ -8,13 +8,22 @@ import { User, Mail, Lock, ArrowRight, Loader, Shield } from 'lucide-react';
 import Link from 'next/link';
 
 export default function RegisterPage() {
-  const { register } = useAuth();
+  const { register, user, loading: authLoading } = useAuth();
   const toast = useToast();
   const router = useRouter();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/drive');
+    }
+  }, [user, authLoading, router]);
+
+  if (authLoading || user) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

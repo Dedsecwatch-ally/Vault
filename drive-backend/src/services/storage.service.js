@@ -79,6 +79,13 @@ class StorageService {
     }
 
     /**
+     * Get a readable stream (supports byte ranges for video seeking)
+     */
+    async getStream(filename, options = {}) {
+        return this.adapter.getStream(filename, options);
+    }
+
+    /**
      * Get file URL
      */
     getUrl(filename) {

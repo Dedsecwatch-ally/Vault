@@ -11,7 +11,7 @@ import {
     File as FileIcon, Folder, MoreVertical, Download,
     Link2, Trash, RotateCcw, X, Loader, Plus,
     FileText, Image, FileSpreadsheet, FileArchive, Film, Music,
-    Menu, Clock
+    Menu, Clock, Eye
 } from 'lucide-react';
 import s from './drive.module.css';
 
@@ -24,6 +24,25 @@ const getFileIcon = (mimeType) => {
     if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv')) return FileSpreadsheet;
     if (mimeType.includes('zip') || mimeType.includes('rar') || mimeType.includes('archive')) return FileArchive;
     return FileIcon;
+};
+
+const getPreviewUrl = (fileId) => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('vault_token') : null;
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    return `${baseUrl}/api/files/${fileId}/download${token ? `?token=${token}` : ''}`;
+};
+
+const canPreview = (mimeType) => {
+    if (!mimeType) return false;
+    if (mimeType.startsWith('image/')) return true;
+    if (mimeType.startsWith('video/')) return true;
+    if (mimeType.startsWith('audio/')) return true;
+    if (mimeType === 'application/pdf') return true;
+    if (mimeType.startsWith('text/')) return true;
+    if (mimeType === 'application/json') return true;
+    if (mimeType === 'application/xml') return true;
+    if (mimeType === 'application/javascript') return true;
+    return false;
 };
 
 const formatSize = (bytes) => {
@@ -41,7 +60,7 @@ const formatDate = (dateStr) => {
 };
 
 export default function DrivePage() {
-    const { user, loading: authLoading, logout, refreshUser } = useAuth();
+    const { user, loading: authLoading, logout, refreshUser, getEncryptionKey } = useAuth();
     const router = useRouter();
     const toast = useToast();
 
@@ -56,7 +75,7 @@ export default function DrivePage() {
     const [searchResults, setSearchResults] = useState(null);
     const [quota, setQuota] = useState(null);
     const [trashItems, setTrashItems] = useState([]);
-    const [sharedItems, setSharedItems] = useState([]);
+
     const [uploading, setUploading] = useState(false);
     const [showNewFolder, setShowNewFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
@@ -67,6 +86,7 @@ export default function DrivePage() {
     const [sharePermission, setSharePermission] = useState('view');
     const [mobileSidebar, setMobileSidebar] = useState(false);
     const [dragOver, setDragOver] = useState(false);
+    const [previewFile, setPreviewFile] = useState(null);
 
     useEffect(() => {
         if (!authLoading && !user) router.replace('/login');
@@ -83,9 +103,7 @@ export default function DrivePage() {
             if (view === 'trash') {
                 const data = await api.listTrash();
                 setTrashItems(data.data?.items || []);
-            } else if (view === 'shared') {
-                const data = await api.listSharedWithMe();
-                setSharedItems(data.data?.items || []);
+
             } else {
                 if (currentFolder) {
                     const data = await api.getFolderContents(currentFolder);
@@ -119,7 +137,7 @@ export default function DrivePage() {
         if (!fileList?.length) return;
         setUploading(true);
         try {
-            await api.uploadFiles(fileList, currentFolder);
+            await api.uploadFiles(fileList, currentFolder, getEncryptionKey());
             toast.success(`${fileList.length} file(s) uploaded`);
             loadContent(); refreshUser();
             api.getQuota().then(d => setQuota(d.data?.storage)).catch(() => { });
@@ -133,7 +151,7 @@ export default function DrivePage() {
         if (!droppedFiles?.length) return;
         setUploading(true);
         try {
-            await api.uploadFiles(droppedFiles, currentFolder);
+            await api.uploadFiles(droppedFiles, currentFolder, getEncryptionKey());
             toast.success(`${droppedFiles.length} file(s) uploaded`);
             loadContent(); refreshUser();
             api.getQuota().then(d => setQuota(d.data?.storage)).catch(() => { });
@@ -152,13 +170,24 @@ export default function DrivePage() {
 
     const handleDownload = async (file) => {
         try {
-            const blob = await api.downloadFile(file.id);
+            const blob = await api.downloadFile(file.id, getEncryptionKey(), file.isEncrypted);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a'); a.href = url; a.download = file.originalName || file.name;
             a.click(); URL.revokeObjectURL(url);
             toast.success('Download started');
         } catch (err) { toast.error(err.message || 'Download failed'); }
         setContextMenu(null);
+    };
+
+    const openPreview = (file) => {
+        setPreviewFile({
+            id: file.id,
+            name: file.originalName || file.name,
+            mimeType: file.mimeType,
+            size: file.size,
+            url: getPreviewUrl(file.id),
+            isEncrypted: file.isEncrypted || false,
+        });
     };
 
     const handleDelete = async (item, type) => {
@@ -236,10 +265,7 @@ export default function DrivePage() {
                         onClick={() => { setView('my-drive'); setCurrentFolder(null); setBreadcrumbs([]); clearSearch(); setMobileSidebar(false); }}>
                         <HardDrive size={16} /> My Drive
                     </button>
-                    <button className={`${s.navItem} ${view === 'shared' ? s.navItemActive : ''}`}
-                        onClick={() => { setView('shared'); clearSearch(); setMobileSidebar(false); }}>
-                        <Share2 size={16} /> Shared with me
-                    </button>
+
                     <button className={`${s.navItem} ${view === 'trash' ? s.navItemActive : ''}`}
                         onClick={() => { setView('trash'); clearSearch(); setMobileSidebar(false); }}>
                         <Trash2 size={16} /> Trash
@@ -346,23 +372,6 @@ export default function DrivePage() {
                                 </div>
                             )}
                         </section>
-                    ) : view === 'shared' ? (
-                        <section>
-                            <div className={s.sectionBar}><h2 className={s.sectionHeading}>Shared with me</h2></div>
-                            {sharedItems.length === 0 ? (
-                                <div className="empty-state"><Share2 size={40} /><h3>Nothing shared yet</h3><p>Files shared with you will appear here</p></div>
-                            ) : (
-                                <div className={viewMode === 'grid' ? s.gridView : s.listView}>
-                                    {sharedItems.map(item => (
-                                        <div key={item.id} className={s.sharedCard}>
-                                            <Share2 size={18} className={s.scIcon} />
-                                            <span className={s.scName}>{item.resource?.originalName || item.resource?.name || 'Shared item'}</span>
-                                            <span className="badge badge-accent">{item.permission}</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </section>
                     ) : (
                         /* My Drive */
                         <>
@@ -410,6 +419,7 @@ export default function DrivePage() {
                                             <div className={viewMode === 'grid' ? s.gridView : s.listView}>
                                                 {files.map(f => (
                                                     <ItemCard key={f.id} item={f} type="file" viewMode={viewMode}
+                                                        onClick={canPreview(f.mimeType) ? () => openPreview(f) : undefined}
                                                         onContext={(e) => { e.preventDefault(); e.stopPropagation(); setContextMenu({ item: f, type: 'file', x: e.clientX, y: e.clientY }); }}
                                                     />
                                                 ))}
@@ -488,6 +498,16 @@ export default function DrivePage() {
                     </div>
                 </div>
             )}
+
+            {/* File Preview Modal */}
+            {previewFile && (
+                <FilePreviewModal
+                    file={previewFile}
+                    onClose={() => setPreviewFile(null)}
+                    onDownload={() => handleDownload(previewFile)}
+                    encryptionKey={getEncryptionKey()}
+                />
+            )}
         </div>
     );
 }
@@ -539,6 +559,159 @@ function TrashCard({ item, onRestore, onDelete }) {
             <button className="btn btn-icon btn-ghost" title="Delete forever" onClick={onDelete}>
                 <Trash size={14} style={{ color: 'var(--danger)' }} />
             </button>
+        </div>
+    );
+}
+
+/* ---- File Preview Modal ---- */
+function FilePreviewModal({ file, onClose, onDownload, encryptionKey }) {
+    const [textContent, setTextContent] = useState(null);
+    const [textLoading, setTextLoading] = useState(false);
+    const [blobUrl, setBlobUrl] = useState(null);
+    const [blobLoading, setBlobLoading] = useState(false);
+    const mime = file.mimeType || '';
+
+    const isImage = mime.startsWith('image/');
+    const isVideo = mime.startsWith('video/');
+    const isAudio = mime.startsWith('audio/');
+    const isPdf = mime === 'application/pdf';
+    const isText = mime.startsWith('text/') || mime === 'application/json' || mime === 'application/xml' || mime === 'application/javascript';
+    const needsDecrypt = file.isEncrypted && encryptionKey;
+
+    // For encrypted media/PDF files: fetch, decrypt, create blob URL
+    useEffect(() => {
+        if (!needsDecrypt || isText) return;
+        if (!(isImage || isVideo || isAudio || isPdf)) return;
+
+        setBlobLoading(true);
+        api.downloadFile(file.id, encryptionKey, true)
+            .then(blob => {
+                const url = URL.createObjectURL(blob);
+                setBlobUrl(url);
+            })
+            .catch(() => setBlobUrl(null))
+            .finally(() => setBlobLoading(false));
+
+        return () => { if (blobUrl) URL.revokeObjectURL(blobUrl); };
+    }, [file.id, needsDecrypt, isImage, isVideo, isAudio, isPdf]);
+
+    // Fetch text content on mount
+    useEffect(() => {
+        if (!isText) return;
+        setTextLoading(true);
+
+        if (needsDecrypt) {
+            // Fetch + decrypt for encrypted text
+            api.downloadFile(file.id, encryptionKey, true)
+                .then(blob => blob.text())
+                .then(text => {
+                    setTextContent(text.length > 200000 ? text.slice(0, 200000) + '\n\n... (truncated)' : text);
+                })
+                .catch(() => setTextContent('Failed to load file content.'))
+                .finally(() => setTextLoading(false));
+        } else {
+            const token = typeof window !== 'undefined' ? localStorage.getItem('vault_token') : null;
+            const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+            fetch(`${baseUrl}/api/files/${file.id}/download`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            })
+                .then(res => {
+                    if (!res.ok) throw new Error('Failed to load');
+                    return res.text();
+                })
+                .then(text => {
+                    setTextContent(text.length > 200000 ? text.slice(0, 200000) + '\n\n... (truncated)' : text);
+                })
+                .catch(() => setTextContent('Failed to load file content.'))
+                .finally(() => setTextLoading(false));
+        }
+    }, [file.id, isText, needsDecrypt]);
+
+    // Close on Escape key
+    useEffect(() => {
+        const handleKey = (e) => { if (e.key === 'Escape') onClose(); };
+        window.addEventListener('keydown', handleKey);
+        return () => window.removeEventListener('keydown', handleKey);
+    }, [onClose]);
+
+    const mediaSrc = needsDecrypt ? blobUrl : file.url;
+
+    const renderContent = () => {
+        if (needsDecrypt && blobLoading && !isText) {
+            return (
+                <div className={s.previewTextLoading}><Loader size={18} className="spinner" /> Decrypting...</div>
+            );
+        }
+
+        if (isImage) {
+            return mediaSrc ? <img className={s.previewImage} src={mediaSrc} alt={file.name} /> : null;
+        }
+
+        if (isVideo) {
+            return mediaSrc ? (
+                <video className={s.previewVideo} controls autoPlay src={mediaSrc}>
+                    Your browser does not support video playback.
+                </video>
+            ) : null;
+        }
+
+        if (isAudio) {
+            return (
+                <div className={s.previewAudioWrap}>
+                    <Music size={48} className={s.previewAudioIcon} />
+                    <span className={s.previewAudioName}>{file.name}</span>
+                    {mediaSrc && (
+                        <audio className={s.previewAudio} controls autoPlay src={mediaSrc}>
+                            Your browser does not support audio playback.
+                        </audio>
+                    )}
+                </div>
+            );
+        }
+
+        if (isPdf) {
+            return mediaSrc ? <iframe className={s.previewPdf} src={mediaSrc} title={file.name} /> : null;
+        }
+
+        if (isText) {
+            return (
+                <div className={s.previewTextWrap}>
+                    {textLoading ? (
+                        <div className={s.previewTextLoading}><Loader size={14} className="spinner" /> {needsDecrypt ? 'Decrypting...' : 'Loading...'}</div>
+                    ) : (
+                        <pre className={s.previewTextContent}>{textContent}</pre>
+                    )}
+                </div>
+            );
+        }
+
+        // Unsupported type
+        return (
+            <div className={s.previewUnsupported}>
+                <FileIcon size={48} className={s.previewUnsupportedIcon} />
+                <span className={s.previewUnsupportedTitle}>Preview unavailable</span>
+                <span className={s.previewUnsupportedSub}>This file type cannot be previewed. Download it to view.</span>
+                <button className="btn btn-primary btn-sm" onClick={onDownload}><Download size={14} /> Download</button>
+            </div>
+        );
+    };
+
+    return (
+        <div className={s.previewOverlay} onClick={onClose}>
+            <div className={s.previewHeader}>
+                <span className={s.previewTitle}>{file.name}</span>
+                <div className={s.previewActions}>
+                    <button className={s.previewBtn} title="Download" onClick={(e) => { e.stopPropagation(); onDownload(); }}>
+                        <Download size={15} />
+                    </button>
+                    <button className={s.previewBtn} title="Close" onClick={onClose}>
+                        <X size={16} />
+                    </button>
+                </div>
+            </div>
+            <div className={s.previewBody} onClick={(e) => e.stopPropagation()}>
+                {renderContent()}
+            </div>
         </div>
     );
 }

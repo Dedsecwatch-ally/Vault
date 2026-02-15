@@ -7,7 +7,7 @@ const { generateToken } = require('../../utils/jwt');
  * @param {Object} userData - User registration data
  * @returns {Object} User and token
  */
-const register = async ({ email, password, name }) => {
+const register = async ({ email, password, name, encryptionSalt }) => {
     // Check if user exists
     const existingUser = await User.findOne({ where: { email } });
 
@@ -16,7 +16,7 @@ const register = async ({ email, password, name }) => {
     }
 
     // Create user
-    const user = await User.create({ email, password, name });
+    const user = await User.create({ email, password, name, encryptionSalt });
 
     // Generate token
     const token = generateToken({ id: user.id, email: user.email });
@@ -24,6 +24,7 @@ const register = async ({ email, password, name }) => {
     return {
         user: user.toSafeObject(),
         token,
+        encryptionSalt: user.encryptionSalt,
     };
 };
 
@@ -53,6 +54,7 @@ const login = async ({ email, password }) => {
     return {
         user: user.toSafeObject(),
         token,
+        encryptionSalt: user.encryptionSalt,
     };
 };
 

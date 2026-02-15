@@ -1,4 +1,5 @@
 const filesService = require('./files.service');
+const storageService = require('../../services/storage.service');
 const ApiError = require('../../utils/ApiError');
 
 /**
@@ -11,12 +12,13 @@ const upload = async (req, res, next) => {
             throw ApiError.badRequest('No files uploaded');
         }
 
-        const { folderId } = req.body;
+        const { folderId, isEncrypted } = req.body;
+        const encrypted = isEncrypted === 'true' || isEncrypted === true;
         const uploadedFiles = [];
 
         // Process each file
         for (const fileData of req.files) {
-            const file = await filesService.uploadFile(fileData, req.user.id, { folderId });
+            const file = await filesService.uploadFile(fileData, req.user.id, { folderId, isEncrypted: encrypted });
             uploadedFiles.push(file);
         }
 
@@ -74,13 +76,44 @@ const getOne = async (req, res, next) => {
  */
 const download = async (req, res, next) => {
     try {
-        const fileData = await filesService.getFileForDownload(req.params.id, req.user.id);
+        const file = await filesService.getFile(req.params.id, req.user.id);
 
-        res.setHeader('Content-Type', fileData.mimeType);
-        res.setHeader('Content-Disposition', `attachment; filename="${fileData.originalName}"`);
-        res.setHeader('Content-Length', fileData.buffer.length);
+        const exists = await storageService.exists(file.filename);
+        if (!exists) {
+            throw ApiError.notFound('File not found on storage');
+        }
 
-        res.send(fileData.buffer);
+        const fileSize = parseInt(file.size, 10);
+        const range = req.headers.range;
+
+        // Support Range requests (required for video seeking)
+        if (range) {
+            const parts = range.replace(/bytes=/, '').split('-');
+            const start = parseInt(parts[0], 10);
+            const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+            const chunkSize = end - start + 1;
+
+            const stream = await storageService.getStream(file.filename, { start, end });
+
+            res.writeHead(206, {
+                'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+                'Accept-Ranges': 'bytes',
+                'Content-Length': chunkSize,
+                'Content-Type': file.mimeType,
+            });
+
+            stream.pipe(res);
+        } else {
+            // Full file download (streamed, not buffered)
+            const stream = await storageService.getStream(file.filename);
+
+            res.setHeader('Content-Type', file.mimeType);
+            res.setHeader('Content-Disposition', `attachment; filename="${file.originalName}"`);
+            res.setHeader('Content-Length', fileSize);
+            res.setHeader('Accept-Ranges', 'bytes');
+
+            stream.pipe(res);
+        }
     } catch (error) {
         console.error('Download error:', error.message, error.stack);
         next(error);

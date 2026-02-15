@@ -38,3 +38,4 @@ const notFoundHandler = (req, res, next) => {
 };
 
 module.exports = { errorHandler, notFoundHandler };
+res.status(statusCode).json(response);

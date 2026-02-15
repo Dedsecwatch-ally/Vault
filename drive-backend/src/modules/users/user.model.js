@@ -36,6 +36,11 @@ const User = sequelize.define('User', {
         allowNull: false,
         field: 'storage_quota',
     },
+    encryptionSalt: {
+        type: DataTypes.STRING(64),
+        allowNull: true,
+        field: 'encryption_salt',
+    },
 }, {
     tableName: 'users',
     timestamps: true,

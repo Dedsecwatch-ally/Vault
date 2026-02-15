@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import { useRouter } from 'next/navigation';
@@ -8,103 +8,112 @@ import { Mail, Lock, ArrowRight, Loader, Shield } from 'lucide-react';
 import Link from 'next/link';
 
 export default function LoginPage() {
-    const { login } = useAuth();
-    const toast = useToast();
-    const router = useRouter();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [loading, setLoading] = useState(false);
+  const { login, user, loading: authLoading } = useAuth();
+  const toast = useToast();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        try {
-            await login(email, password);
-            toast.success('Welcome back!');
-            router.push('/drive');
-        } catch (err) {
-            toast.error(err.message || 'Invalid credentials');
-        } finally {
-            setLoading(false);
-        }
-    };
+  // Redirect if already logged in
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.replace('/drive');
+    }
+  }, [user, authLoading, router]);
 
-    return (
-        <div className="auth-page">
-            {/* Dot grid background */}
-            <div className="auth-grid" />
+  if (authLoading || user) return null;
 
-            {/* Gradient glow orbs */}
-            <div className="glow glow-1" />
-            <div className="glow glow-2" />
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await login(email, password);
+      toast.success('Welcome back!');
+      router.push('/drive');
+    } catch (err) {
+      toast.error(err.message || 'Invalid credentials');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            <div className="auth-wrapper">
-                {/* Left: branding */}
-                <div className="auth-brand">
-                    <div className="brand-icon"><Shield size={24} /></div>
-                    <h1 className="brand-title">Vault</h1>
-                    <p className="brand-desc">Secure, fast, and elegant cloud storage for your files.</p>
+  return (
+    <div className="auth-page">
+      {/* Dot grid background */}
+      <div className="auth-grid" />
 
-                    <div className="brand-features">
-                        <div className="feature-row"><span className="feature-dot" /><span>End-to-end encrypted storage</span></div>
-                        <div className="feature-row"><span className="feature-dot" /><span>Instant file versioning</span></div>
-                        <div className="feature-row"><span className="feature-dot" /><span>Share with granular permissions</span></div>
-                        <div className="feature-row"><span className="feature-dot" /><span>15 GB free cloud storage</span></div>
-                    </div>
-                </div>
+      {/* Gradient glow orbs */}
+      <div className="glow glow-1" />
+      <div className="glow glow-2" />
 
-                {/* Right: form card */}
-                <div className="auth-card-wrapper">
-                    <div className="auth-card">
-                        <div className="card-header">
-                            <h2>Sign in</h2>
-                            <p>Enter your credentials to continue</p>
-                        </div>
+      <div className="auth-wrapper">
+        {/* Left: branding */}
+        <div className="auth-brand">
+          <div className="brand-icon"><Shield size={24} /></div>
+          <h1 className="brand-title">Vault</h1>
+          <p className="brand-desc">Secure, fast, and elegant cloud storage for your files.</p>
 
-                        <form onSubmit={handleSubmit} className="auth-form">
-                            <div className="input-group">
-                                <label>Email</label>
-                                <div className="field">
-                                    <Mail size={15} className="field-icon" />
-                                    <input
-                                        type="email"
-                                        className="input"
-                                        placeholder="you@example.com"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
+          <div className="brand-features">
+            <div className="feature-row"><span className="feature-dot" /><span>End-to-end encrypted storage</span></div>
+            <div className="feature-row"><span className="feature-dot" /><span>Instant file versioning</span></div>
+            <div className="feature-row"><span className="feature-dot" /><span>Share with granular permissions</span></div>
+            <div className="feature-row"><span className="feature-dot" /><span>15 GB free cloud storage</span></div>
+          </div>
+        </div>
 
-                            <div className="input-group">
-                                <label>Password</label>
-                                <div className="field">
-                                    <Lock size={15} className="field-icon" />
-                                    <input
-                                        type="password"
-                                        className="input"
-                                        placeholder="••••••••"
-                                        value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
-                                        required
-                                    />
-                                </div>
-                            </div>
-
-                            <button type="submit" className="btn btn-primary submit-btn" disabled={loading}>
-                                {loading ? <Loader size={16} className="spinner" /> : <>Sign In <ArrowRight size={14} /></>}
-                            </button>
-                        </form>
-
-                        <p className="auth-switch">
-                            No account? <Link href="/register">Create one →</Link>
-                        </p>
-                    </div>
-                </div>
+        {/* Right: form card */}
+        <div className="auth-card-wrapper">
+          <div className="auth-card">
+            <div className="card-header">
+              <h2>Sign in</h2>
+              <p>Enter your credentials to continue</p>
             </div>
 
-            <style jsx>{`
+            <form onSubmit={handleSubmit} className="auth-form">
+              <div className="input-group">
+                <label>Email</label>
+                <div className="field">
+                  <Mail size={15} className="field-icon" />
+                  <input
+                    type="email"
+                    className="input"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="input-group">
+                <label>Password</label>
+                <div className="field">
+                  <Lock size={15} className="field-icon" />
+                  <input
+                    type="password"
+                    className="input"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <button type="submit" className="btn btn-primary submit-btn" disabled={loading}>
+                {loading ? <Loader size={16} className="spinner" /> : <>Sign In <ArrowRight size={14} /></>}
+              </button>
+            </form>
+
+            <p className="auth-switch">
+              No account? <Link href="/register">Create one →</Link>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
         .auth-page {
           min-height: 100vh;
           display: flex;
@@ -303,6 +312,6 @@ export default function LoginPage() {
           .auth-card-wrapper { width: 100%; max-width: 380px; }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

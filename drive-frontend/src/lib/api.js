@@ -1,3 +1,5 @@
+import { encryptFile, decryptFile } from './crypto';
+
 class ApiClient {
     constructor() {
         // In production, call backend directly. In dev, use relative URLs (Next.js rewrites).
@@ -53,10 +55,10 @@ class ApiClient {
     }
 
     // Auth
-    async register(name, email, password) {
+    async register(name, email, password, encryptionSalt) {
         const data = await this.request('/api/auth/register', {
             method: 'POST',
-            body: JSON.stringify({ name, email, password }),
+            body: JSON.stringify({ name, email, password, encryptionSalt }),
         });
         if (data.data?.token) this.setToken(data.data.token);
         return data;
@@ -82,20 +84,32 @@ class ApiClient {
         return this.request(`/api/files?${params}`);
     }
 
-    async uploadFiles(fileList, folderId = null) {
+    async uploadFiles(fileList, folderId = null, encryptionKey = null) {
         const formData = new FormData();
 
         // Handle both FileList and Array
-        if (fileList instanceof FileList || Array.isArray(fileList)) {
-            Array.from(fileList).forEach(file => {
+        const files = fileList instanceof FileList || Array.isArray(fileList)
+            ? Array.from(fileList)
+            : [fileList];
+
+        for (const file of files) {
+            if (encryptionKey) {
+                // Encrypt file content before upload
+                const buffer = await file.arrayBuffer();
+                const encrypted = await encryptFile(encryptionKey, buffer);
+                const encryptedBlob = new Blob([encrypted], { type: file.type });
+                const encryptedFile = new File([encryptedBlob], file.name, {
+                    type: file.type,
+                    lastModified: file.lastModified,
+                });
+                formData.append('files', encryptedFile);
+            } else {
                 formData.append('files', file);
-            });
-        } else {
-            // Single file fallback
-            formData.append('files', fileList);
+            }
         }
 
         if (folderId) formData.append('folderId', folderId);
+        if (encryptionKey) formData.append('isEncrypted', 'true');
 
         return this.request('/api/files/upload', {
             method: 'POST',
@@ -103,7 +117,7 @@ class ApiClient {
         });
     }
 
-    async downloadFile(fileId) {
+    async downloadFile(fileId, encryptionKey = null, isEncrypted = false) {
         const token = this.getToken();
         const response = await fetch(`${this.baseUrl}/api/files/${fileId}/download`, {
             headers: { Authorization: `Bearer ${token}` },
@@ -117,6 +131,14 @@ class ApiClient {
             throw new Error(msg);
         }
         const blob = await response.blob();
+
+        // Decrypt if the file was encrypted
+        if (isEncrypted && encryptionKey) {
+            const encryptedBuffer = await blob.arrayBuffer();
+            const decryptedBuffer = await decryptFile(encryptionKey, encryptedBuffer);
+            return new Blob([decryptedBuffer], { type: blob.type });
+        }
+
         return blob;
     }
 

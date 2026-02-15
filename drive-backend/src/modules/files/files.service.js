@@ -7,7 +7,7 @@ const quotaService = require('../../services/quota.service');
 /**
  * Upload a file (creates new or new version)
  */
-const uploadFile = async (fileData, ownerId, { folderId = null } = {}) => {
+const uploadFile = async (fileData, ownerId, { folderId = null, isEncrypted = false } = {}) => {
     const fileSize = fileData.size;
 
     // Check quota
@@ -50,6 +50,7 @@ const uploadFile = async (fileData, ownerId, { folderId = null } = {}) => {
         existingFile.path = fileInfo.path;
         existingFile.mimeType = fileInfo.mimeType;
         existingFile.currentVersion = newVersion;
+        existingFile.isEncrypted = isEncrypted;
         await existingFile.save();
 
         file = existingFile;
@@ -63,6 +64,7 @@ const uploadFile = async (fileData, ownerId, { folderId = null } = {}) => {
             path: fileInfo.path,
             folderId,
             ownerId,
+            isEncrypted,
         });
     }
 

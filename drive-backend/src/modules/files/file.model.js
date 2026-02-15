@@ -46,6 +46,12 @@ const File = sequelize.define('File', {
         allowNull: false,
         field: 'current_version',
     },
+    isEncrypted: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
+        field: 'is_encrypted',
+    },
 }, {
     tableName: 'files',
     timestamps: true,

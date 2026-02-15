@@ -8,14 +8,19 @@ const User = require('../modules/users/user.model');
  */
 const authenticate = async (req, res, next) => {
     try {
-        // Get token from header
+        // Get token from header or query param (query param fallback for <video> src)
         const authHeader = req.headers.authorization;
+        let token;
 
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            throw ApiError.unauthorized('No token provided');
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        } else if (req.query.token) {
+            token = req.query.token;
         }
 
-        const token = authHeader.split(' ')[1];
+        if (!token) {
+            throw ApiError.unauthorized('No token provided');
+        }
 
         // Verify token
         const decoded = verifyToken(token);

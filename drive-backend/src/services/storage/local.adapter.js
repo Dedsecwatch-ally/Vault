@@ -1,4 +1,5 @@
 const fs = require('fs').promises;
+const { createReadStream } = require('fs');
 const path = require('path');
 
 /**
@@ -64,6 +65,17 @@ class LocalStorageAdapter {
      */
     async getBuffer(filename) {
         return fs.readFile(this.getFilePath(filename));
+    }
+
+    /**
+     * Get a readable stream for file download (supports byte ranges for video seeking)
+     */
+    getStream(filename, options = {}) {
+        const filePath = this.getFilePath(filename);
+        const streamOptions = {};
+        if (options.start !== undefined) streamOptions.start = options.start;
+        if (options.end !== undefined) streamOptions.end = options.end;
+        return createReadStream(filePath, streamOptions);
     }
 
     /**
