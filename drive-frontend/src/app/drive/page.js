@@ -85,7 +85,7 @@ export default function DrivePage() {
                 setTrashItems(data.data?.items || []);
             } else if (view === 'shared') {
                 const data = await api.listSharedWithMe();
-                setSharedItems(data.data?.shares || []);
+                setSharedItems(data.data?.items || []);
             } else {
                 if (currentFolder) {
                     const data = await api.getFolderContents(currentFolder);

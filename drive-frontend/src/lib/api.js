@@ -211,7 +211,7 @@ class ApiClient {
     async shareWithUser(resourceType, resourceId, sharedWithEmail, permission) {
         return this.request('/api/shares', {
             method: 'POST',
-            body: JSON.stringify({ resourceType, resourceId, sharedWithEmail, permission }),
+            body: JSON.stringify({ resourceType, resourceId, email: sharedWithEmail, permission }),
         });
     }
 
