@@ -94,7 +94,7 @@ class S3StorageAdapter {
             }));
             return true;
         } catch (error) {
-            if (error.name === 'NotFound') {
+            if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404 || error.$metadata?.httpStatusCode === 403) {
                 return false;
             }
             throw error;

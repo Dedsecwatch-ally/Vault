@@ -74,7 +74,7 @@ class StorageService {
     /**
      * Get file stream
      */
-    getStream(filename) {
+    async getStream(filename) {
         return this.adapter.getStream(filename);
     }
 
