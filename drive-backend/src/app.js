@@ -38,6 +38,18 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Temporary debug endpoint
+app.get('/debug/storage', (req, res) => {
+    const env = require('./config/env');
+    res.json({
+        provider: env.STORAGE_PROVIDER,
+        bucket: env.AWS_S3_BUCKET,
+        region: env.AWS_REGION,
+        endpoint: env.AWS_ENDPOINT ? '***set***' : 'NOT SET',
+        accessKey: env.AWS_ACCESS_KEY_ID ? '***set***' : 'NOT SET',
+    });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/files', fileRoutes);
