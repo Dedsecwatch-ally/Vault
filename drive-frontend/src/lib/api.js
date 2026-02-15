@@ -1,7 +1,7 @@
 class ApiClient {
     constructor() {
-        // Relative URLs — Next.js rewrites proxy /api/* to the backend
-        this.baseUrl = '';
+        // In production, call backend directly. In dev, use relative URLs (Next.js rewrites).
+        this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
     }
 
     getToken() {
