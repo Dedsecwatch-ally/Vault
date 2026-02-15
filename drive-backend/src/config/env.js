@@ -8,34 +8,34 @@ if (!process.env.VERCEL) {
 
 const env = {
     // Server
-    NODE_ENV: process.env.NODE_ENV || 'development',
+    NODE_ENV: (process.env.NODE_ENV || 'development').trim(),
     PORT: parseInt(process.env.PORT, 10) || 3000,
 
     // Database
-    DATABASE_URL: process.env.DATABASE_URL || null,
-    DB_HOST: process.env.DB_HOST || 'localhost',
+    DATABASE_URL: process.env.DATABASE_URL?.trim() || null,
+    DB_HOST: (process.env.DB_HOST || 'localhost').trim(),
     DB_PORT: parseInt(process.env.DB_PORT, 10) || 5432,
-    DB_NAME: process.env.DB_NAME || 'drive_db',
-    DB_USER: process.env.DB_USER || 'postgres',
-    DB_PASSWORD: process.env.DB_PASSWORD || '',
+    DB_NAME: (process.env.DB_NAME || 'drive_db').trim(),
+    DB_USER: (process.env.DB_USER || 'postgres').trim(),
+    DB_PASSWORD: (process.env.DB_PASSWORD || '').trim(),
     DB_SSL: process.env.DB_SSL === 'true' || !!process.env.DATABASE_URL,
 
     // JWT
-    JWT_SECRET: process.env.JWT_SECRET,
-    JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+    JWT_SECRET: process.env.JWT_SECRET?.trim(),
+    JWT_EXPIRES_IN: (process.env.JWT_EXPIRES_IN || '7d').trim(),
 
     // Storage
-    STORAGE_PROVIDER: process.env.STORAGE_PROVIDER || 'local', // 'local' or 's3'
-    UPLOAD_DIR: process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads'),
+    STORAGE_PROVIDER: (process.env.STORAGE_PROVIDER || 'local').trim(), // 'local' or 's3'
+    UPLOAD_DIR: (process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads')).trim(),
     MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 50 * 1024 * 1024, // 50MB default
 
     // AWS S3 (optional)
-    AWS_REGION: process.env.AWS_REGION,
-    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID,
-    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY,
-    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-    AWS_S3_PREFIX: process.env.AWS_S3_PREFIX || 'uploads/',
-    AWS_ENDPOINT: process.env.AWS_ENDPOINT,
+    AWS_REGION: process.env.AWS_REGION?.trim(),
+    AWS_ACCESS_KEY_ID: process.env.AWS_ACCESS_KEY_ID?.trim(),
+    AWS_SECRET_ACCESS_KEY: process.env.AWS_SECRET_ACCESS_KEY?.trim(),
+    AWS_S3_BUCKET: process.env.AWS_S3_BUCKET?.trim(),
+    AWS_S3_PREFIX: (process.env.AWS_S3_PREFIX || 'uploads/').trim(),
+    AWS_ENDPOINT: process.env.AWS_ENDPOINT?.trim(),
 };
 
 // Validate required environment variables
