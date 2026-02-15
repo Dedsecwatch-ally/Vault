@@ -3,7 +3,16 @@ import { encryptFile, decryptFile } from './crypto';
 class ApiClient {
     constructor() {
         // In production, call backend directly. In dev, use relative URLs (Next.js rewrites).
+        // WARNING: If NEXT_PUBLIC_API_URL is set to localhost in production, this will fail.
         this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+
+        if (typeof window !== 'undefined') {
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+            if (!isLocal && this.baseUrl.includes('localhost')) {
+                console.error('CRITICAL: App is deployed but configured to talk to localhost. Check NEXT_PUBLIC_API_URL.');
+            }
+            console.log('API Client initialized with Base URL:', this.baseUrl || '(relative)');
+        }
     }
 
     getToken() {
@@ -37,21 +46,31 @@ class ApiClient {
             headers['Content-Type'] = 'application/json';
         }
 
-        const response = await fetch(`${this.baseUrl}${endpoint}`, {
-            ...options,
-            headers,
-        });
+        const fullUrl = `${this.baseUrl}${endpoint}`;
+        console.log(`📡 Requesting: ${options.method || 'GET'} ${fullUrl}`);
 
-        const data = await response.json();
+        try {
+            const response = await fetch(fullUrl, {
+                ...options,
+                headers,
+            });
 
-        if (!response.ok) {
-            const error = new Error(data.message || 'Something went wrong');
-            error.status = response.status;
-            error.data = data;
+            const data = await response.json();
+
+            if (!response.ok) {
+                console.error('❌ API Error Response:', response.status, data);
+                const error = new Error(data.message || 'Something went wrong');
+                error.status = response.status;
+                error.data = data;
+                throw error;
+            }
+
+            return data;
+        } catch (error) {
+            console.error('🔥 Network/Fetch Error details:', error);
+            console.error('Attempted URL:', fullUrl);
             throw error;
         }
-
-        return data;
     }
 
     // Auth

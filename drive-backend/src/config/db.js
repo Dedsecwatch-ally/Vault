@@ -12,13 +12,21 @@ if (env.DB_SSL) {
     };
 }
 
-// Support DATABASE_URL (Neon, Render, Railway provide this)
-const sequelize = env.DATABASE_URL
-    ? new Sequelize(env.DATABASE_URL, {
+// Support standard Postgres connection strings
+// Vercel / Neon often use POSTGRES_URL or DATABASE_URL
+const connectionString = env.DATABASE_URL || process.env.POSTGRES_URL;
+
+const sequelize = connectionString
+    ? new Sequelize(connectionString, {
         dialect: 'postgres',
         dialectModule: require('pg'), // Required for Vercel/Next.js bundling
         logging: env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
-        dialectOptions,
+        dialectOptions: {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false, // Essential for many serverless PG providers
+            }
+        },
         pool: {
             max: 10,
             min: 0,
@@ -26,14 +34,18 @@ const sequelize = env.DATABASE_URL
             idle: 10000,
         },
     })
-
     : new Sequelize(env.DB_NAME, env.DB_USER, env.DB_PASSWORD, {
         host: env.DB_HOST,
         port: env.DB_PORT,
         dialect: 'postgres',
-        dialectModule: require('pg'), // Required for Vercel/Next.js bundling
+        dialectModule: require('pg'),
         logging: env.NODE_ENV === 'development' ? (msg) => logger.debug(msg) : false,
-        dialectOptions,
+        dialectOptions: env.DB_SSL ? {
+            ssl: {
+                require: true,
+                rejectUnauthorized: false
+            }
+        } : {},
         pool: {
             max: 10,
             min: 0,
@@ -47,13 +59,14 @@ const connectDB = async () => {
         await sequelize.authenticate();
         logger.info('✅ PostgreSQL connected successfully');
 
-        // Sync models in development (use migrations in production)
-        // Sync models (alter: true in dev, force: false in prod)
-        await sequelize.sync({ alter: env.NODE_ENV === 'development' });
-        logger.info('✅ Database synced');
+        if (env.NODE_ENV === 'development') {
+            await sequelize.sync({ alter: true });
+            logger.info('✅ Database synced (Method: alter)');
+        }
     } catch (error) {
         logger.error('❌ Unable to connect to PostgreSQL:', error);
-        throw error; // Don't process.exit in serverless environments
+        // Important: In serverless, we generally don't want to crash the whole container 
+        // immediately as it might prevent cold start retry, but for now reporting is key.
     }
 };
 

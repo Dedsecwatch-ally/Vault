@@ -19,7 +19,15 @@ const app = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors());
+
+// CORS Configuration
+const corsOptions = {
+    origin: process.env.FRONTEND_URL || '*', // In production, set FRONTEND_URL to your Vercel frontend domain
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+};
+app.use(cors(corsOptions));
 
 // Rate limiting
 app.use(generalLimiter);
