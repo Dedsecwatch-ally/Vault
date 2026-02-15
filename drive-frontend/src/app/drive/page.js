@@ -157,7 +157,7 @@ export default function DrivePage() {
             const a = document.createElement('a'); a.href = url; a.download = file.originalName || file.name;
             a.click(); URL.revokeObjectURL(url);
             toast.success('Download started');
-        } catch { toast.error('Download failed'); }
+        } catch (err) { toast.error(err.message || 'Download failed'); }
         setContextMenu(null);
     };
 

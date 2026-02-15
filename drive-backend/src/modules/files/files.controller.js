@@ -82,6 +82,7 @@ const download = async (req, res, next) => {
 
         res.send(fileData.buffer);
     } catch (error) {
+        console.error('Download error:', error.message, error.stack);
         next(error);
     }
 };

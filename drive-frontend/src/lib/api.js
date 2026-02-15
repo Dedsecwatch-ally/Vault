@@ -108,7 +108,14 @@ class ApiClient {
         const response = await fetch(`${this.baseUrl}/api/files/${fileId}/download`, {
             headers: { Authorization: `Bearer ${token}` },
         });
-        if (!response.ok) throw new Error('Download failed');
+        if (!response.ok) {
+            let msg = `Download failed (${response.status})`;
+            try {
+                const errData = await response.json();
+                msg = errData.message || msg;
+            } catch { }
+            throw new Error(msg);
+        }
         const blob = await response.blob();
         return blob;
     }
