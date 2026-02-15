@@ -78,9 +78,9 @@ const download = async (req, res, next) => {
 
         res.setHeader('Content-Type', fileData.mimeType);
         res.setHeader('Content-Disposition', `attachment; filename="${fileData.originalName}"`);
-        res.setHeader('Content-Length', fileData.size);
+        res.setHeader('Content-Length', fileData.buffer.length);
 
-        fileData.stream.pipe(res);
+        res.send(fileData.buffer);
     } catch (error) {
         next(error);
     }

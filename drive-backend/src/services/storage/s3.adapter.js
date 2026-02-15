@@ -102,9 +102,9 @@ class S3StorageAdapter {
     }
 
     /**
-     * Get file stream from S3
+     * Get file buffer from S3
      */
-    async getStream(filename) {
+    async getBuffer(filename) {
         const key = this.getKey(filename);
 
         const response = await this.client.send(new GetObjectCommand({
@@ -112,7 +112,8 @@ class S3StorageAdapter {
             Key: key,
         }));
 
-        return response.Body;
+        const byteArray = await response.Body.transformToByteArray();
+        return Buffer.from(byteArray);
     }
 
     /**

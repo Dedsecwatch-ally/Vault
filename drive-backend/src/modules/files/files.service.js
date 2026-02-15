@@ -129,7 +129,7 @@ const getFileForDownload = async (fileId, ownerId) => {
     }
 
     return {
-        stream: await storageService.getStream(file.filename),
+        buffer: await storageService.getBuffer(file.filename),
         originalName: file.originalName,
         mimeType: file.mimeType,
         size: file.size,

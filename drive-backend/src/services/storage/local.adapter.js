@@ -60,11 +60,10 @@ class LocalStorageAdapter {
     }
 
     /**
-     * Get file stream for download
+     * Get file buffer for download
      */
-    getStream(filename) {
-        const fsSync = require('fs');
-        return fsSync.createReadStream(this.getFilePath(filename));
+    async getBuffer(filename) {
+        return fs.readFile(this.getFilePath(filename));
     }
 
     /**

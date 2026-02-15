@@ -72,10 +72,10 @@ class StorageService {
     }
 
     /**
-     * Get file stream
+     * Get file buffer
      */
-    async getStream(filename) {
-        return this.adapter.getStream(filename);
+    async getBuffer(filename) {
+        return this.adapter.getBuffer(filename);
     }
 
     /**
