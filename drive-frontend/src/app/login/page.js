@@ -14,6 +14,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -27,7 +28,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await login(email, password);
+      await login(email, password, rememberMe);
       toast.success('Welcome back!');
       router.push('/drive');
     } catch (err) {
@@ -81,6 +82,14 @@ export default function LoginPage() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="auth-remember">
+              <label className="auth-checkbox">
+                <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+                <span className="auth-checkmark"></span>
+                Remember me
+              </label>
             </div>
 
             <button type="submit" className="btn btn-primary auth-submit" disabled={loading}>
@@ -178,6 +187,30 @@ export default function LoginPage() {
           top: 50%;
           transform: translateY(-50%);
           color: var(--text-muted);
+        }
+
+        .auth-remember {
+          display: flex;
+          align-items: center;
+        }
+
+        .auth-checkbox {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
+          color: var(--text-secondary);
+          cursor: pointer;
+          user-select: none;
+        }
+
+        .auth-checkbox input {
+          width: 16px;
+          height: 16px;
+          border-radius: 4px;
+          border: 1.5px solid var(--border);
+          accent-color: var(--accent);
+          cursor: pointer;
         }
 
         .auth-submit {

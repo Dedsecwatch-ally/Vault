@@ -63,8 +63,8 @@ export function AuthProvider({ children }) {
         loadUser();
     }, [loadUser]);
 
-    const login = async (email, password) => {
-        const data = await api.login(email, password);
+    const login = async (email, password, rememberMe = true) => {
+        const data = await api.login(email, password, rememberMe);
         setUser(data.data.user);
 
         // Derive encryption key from password + salt

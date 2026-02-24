@@ -17,20 +17,25 @@ class ApiClient {
 
     getToken() {
         if (typeof window !== 'undefined') {
-            return localStorage.getItem('vault_token');
+            return localStorage.getItem('vault_token') || sessionStorage.getItem('vault_token');
         }
         return null;
     }
 
-    setToken(token) {
+    setToken(token, persist = true) {
         if (typeof window !== 'undefined') {
-            localStorage.setItem('vault_token', token);
+            if (persist) {
+                localStorage.setItem('vault_token', token);
+            } else {
+                sessionStorage.setItem('vault_token', token);
+            }
         }
     }
 
     removeToken() {
         if (typeof window !== 'undefined') {
             localStorage.removeItem('vault_token');
+            sessionStorage.removeItem('vault_token');
         }
     }
 
@@ -83,12 +88,12 @@ class ApiClient {
         return data;
     }
 
-    async login(email, password) {
+    async login(email, password, rememberMe = true) {
         const data = await this.request('/api/auth/login', {
             method: 'POST',
             body: JSON.stringify({ email, password }),
         });
-        if (data.data?.token) this.setToken(data.data.token);
+        if (data.data?.token) this.setToken(data.data.token, rememberMe);
         return data;
     }
 
