@@ -59,10 +59,17 @@ const connectDB = async () => {
         await sequelize.authenticate();
         logger.info('✅ PostgreSQL connected successfully');
 
-        if (env.NODE_ENV === 'development') {
-            await sequelize.sync({ alter: true });
-            logger.info('✅ Database synced (Method: alter)');
-        }
+        // Sync models in all environments so new columns (e.g. encryption_salt)
+        // are added to the production database automatically.
+        await sequelize.sync({ alter: true });
+        logger.info('✅ Database synced (Method: alter)');
+
+        // Migrate existing users to 15GB quota
+        const FIFTEEN_GB = 15 * 1024 * 1024 * 1024;
+        await sequelize.query(
+            `UPDATE users SET storage_quota = ${FIFTEEN_GB} WHERE storage_quota < ${FIFTEEN_GB}`
+        );
+        logger.info('✅ Quota migration check complete');
     } catch (error) {
         logger.error('❌ Unable to connect to PostgreSQL:', error);
         // Important: In serverless, we generally don't want to crash the whole container 

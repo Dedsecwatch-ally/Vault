@@ -6,7 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useToast } from '@/context/ToastContext';
 import api from '@/lib/api';
 import {
-    Shield, Search, FolderPlus, Upload, LayoutGrid, List,
+    Search, FolderPlus, Upload, LayoutGrid, List,
     HardDrive, Share2, Trash2, LogOut, ChevronRight, Home,
     File as FileIcon, Folder, MoreVertical, Download,
     Link2, Trash, RotateCcw, X, Loader, Plus,
@@ -235,8 +235,8 @@ export default function DrivePage() {
 
     if (authLoading || !user) {
         return (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-primary)' }}>
-                <Loader size={24} className="spinner" style={{ color: 'var(--accent)' }} />
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: '#F8FAFC' }}>
+                <Loader size={24} className="spinner" style={{ color: '#6366F1' }} />
             </div>
         );
     }
@@ -249,7 +249,7 @@ export default function DrivePage() {
             <aside className={`${s.sidebar} ${mobileSidebar ? s.sidebarOpen : ''}`}>
                 <div className={s.sidebarHead}>
                     <div className={s.sidebarLogo}>
-                        <div className={s.logoMark}><Shield size={16} /></div>
+                        <div className={s.logoMark}>V</div>
                         <span className={s.logoText}>Vault</span>
                     </div>
                 </div>

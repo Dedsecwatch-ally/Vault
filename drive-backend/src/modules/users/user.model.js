@@ -32,7 +32,7 @@ const User = sequelize.define('User', {
     },
     storageQuota: {
         type: DataTypes.BIGINT,
-        defaultValue: 1024 * 1024 * 1024, // 1GB
+        defaultValue: 15 * 1024 * 1024 * 1024, // 15GB (Google Drive free tier)
         allowNull: false,
         field: 'storage_quota',
     },

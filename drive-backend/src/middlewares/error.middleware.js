@@ -1,16 +1,25 @@
 const logger = require('../utils/logger');
 const ApiError = require('../utils/ApiError');
 const env = require('../config/env');
+const multer = require('multer');
 
 /**
  * Global error handling middleware
  */
 const errorHandler = (err, req, res, next) => {
-    let { statusCode, message } = err;
+    let statusCode = err.statusCode || 500;
+    let message = err.message || 'Internal Server Error';
 
-    // Default to 500 if no status code
-    if (!statusCode) {
-        statusCode = 500;
+    // Handle Multer errors (file upload limits, etc.)
+    if (err instanceof multer.MulterError) {
+        statusCode = 400;
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            message = 'File too large. Maximum upload size exceeded.';
+        } else if (err.code === 'LIMIT_FILE_COUNT') {
+            message = 'Too many files. Maximum 10 files per upload.';
+        } else {
+            message = `Upload error: ${err.message}`;
+        }
     }
 
     // Log error
@@ -38,3 +47,4 @@ const notFoundHandler = (req, res, next) => {
 };
 
 module.exports = { errorHandler, notFoundHandler };
+

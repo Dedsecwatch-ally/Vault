@@ -27,7 +27,7 @@ export default function Home() {
       height: '100vh',
       background: 'var(--bg-primary)',
     }}>
-      <Loader size={32} className="spinner" style={{ color: 'var(--accent)' }} />
+      <Loader size={24} className="spinner" style={{ color: 'var(--accent)' }} />
     </div>
   );
 }

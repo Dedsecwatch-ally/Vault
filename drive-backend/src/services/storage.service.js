@@ -4,6 +4,7 @@ const logger = require('../utils/logger');
 // Storage adapters
 const LocalStorageAdapter = require('./storage/local.adapter');
 const S3StorageAdapter = require('./storage/s3.adapter');
+const GoogleDriveAdapter = require('./storage/gdrive.adapter');
 
 /**
  * Storage Service Factory
@@ -27,6 +28,14 @@ class StorageService {
                     secretAccessKey: env.AWS_SECRET_ACCESS_KEY,
                     prefix: env.AWS_S3_PREFIX || 'uploads/',
                     endpoint: env.AWS_ENDPOINT,
+                });
+
+            case 'gdrive':
+                return new GoogleDriveAdapter({
+                    clientId: env.GOOGLE_CLIENT_ID,
+                    clientSecret: env.GOOGLE_CLIENT_SECRET,
+                    refreshToken: env.GOOGLE_REFRESH_TOKEN,
+                    folderId: env.GOOGLE_DRIVE_FOLDER_ID,
                 });
 
             case 'local':

@@ -14,6 +14,8 @@ class S3StorageAdapter {
         this.region = config.region;
         this.prefix = config.prefix || 'uploads/';
 
+        console.log(`[S3] Initializing with bucket=${config.bucket}, region=${config.region}, endpoint=${config.endpoint}`);
+
         this.client = new S3Client({
             region: config.region,
             endpoint: config.endpoint,
@@ -40,19 +42,36 @@ class S3StorageAdapter {
         const filename = `${uuidv4()}${ext}`;
         const key = this.getKey(filename);
 
-        const fileStream = fs.createReadStream(file.path);
+        try {
+            const fileStream = fs.createReadStream(file.path);
 
-        const upload = new Upload({
-            client: this.client,
-            params: {
-                Bucket: this.bucket,
-                Key: key,
-                Body: fileStream,
-                ContentType: file.mimetype,
-            },
-        });
+            const upload = new Upload({
+                client: this.client,
+                params: {
+                    Bucket: this.bucket,
+                    Key: key,
+                    Body: fileStream,
+                    ContentType: file.mimetype,
+                },
+            });
 
-        await upload.done();
+            await upload.done();
+        } catch (err) {
+            // Log the full S3 error for debugging
+            console.error('[S3] Upload failed:', {
+                message: err.message,
+                name: err.name,
+                code: err.Code || err.$metadata?.httpStatusCode,
+                bucket: this.bucket,
+                key,
+            });
+
+            // Re-throw with a clean message
+            const cleanMsg = err.message || 'S3 upload failed';
+            const error = new Error(`Storage upload failed: ${cleanMsg}`);
+            error.statusCode = 500;
+            throw error;
+        }
 
         // Delete local temp file
         try {

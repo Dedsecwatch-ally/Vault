@@ -25,7 +25,7 @@ const env = {
     JWT_EXPIRES_IN: (process.env.JWT_EXPIRES_IN || '7d').trim(),
 
     // Storage
-    STORAGE_PROVIDER: (process.env.STORAGE_PROVIDER || 'local').trim(), // 'local' or 's3'
+    STORAGE_PROVIDER: (process.env.STORAGE_PROVIDER || 'local').trim(), // 'local', 's3', or 'gdrive'
     UPLOAD_DIR: (process.env.UPLOAD_DIR || path.join(__dirname, '../../uploads')).trim(),
     MAX_FILE_SIZE: parseInt(process.env.MAX_FILE_SIZE, 10) || 500 * 1024 * 1024, // 500MB default (video support)
 
@@ -36,6 +36,12 @@ const env = {
     AWS_S3_BUCKET: process.env.AWS_S3_BUCKET?.trim(),
     AWS_S3_PREFIX: (process.env.AWS_S3_PREFIX || 'uploads/').trim(),
     AWS_ENDPOINT: process.env.AWS_ENDPOINT?.trim(),
+
+    // Google Drive (optional — for 'gdrive' provider)
+    GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID?.trim(),
+    GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET?.trim(),
+    GOOGLE_REFRESH_TOKEN: process.env.GOOGLE_REFRESH_TOKEN?.trim(),
+    GOOGLE_DRIVE_FOLDER_ID: process.env.GOOGLE_DRIVE_FOLDER_ID?.trim(),
 };
 
 // Validate required environment variables
@@ -53,6 +59,16 @@ if (env.STORAGE_PROVIDER === 's3') {
 
     if (missingS3Vars.length > 0) {
         throw new Error(`Missing S3 environment variables: ${missingS3Vars.join(', ')}`);
+    }
+}
+
+// Validate Google Drive config if provider is gdrive
+if (env.STORAGE_PROVIDER === 'gdrive') {
+    const gdriveRequiredVars = ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET', 'GOOGLE_REFRESH_TOKEN', 'GOOGLE_DRIVE_FOLDER_ID'];
+    const missingGdriveVars = gdriveRequiredVars.filter((key) => !env[key]);
+
+    if (missingGdriveVars.length > 0) {
+        throw new Error(`Missing Google Drive environment variables: ${missingGdriveVars.join(', ')}`);
     }
 }
 

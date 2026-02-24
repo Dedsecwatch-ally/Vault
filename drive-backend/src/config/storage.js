@@ -13,7 +13,7 @@ const ApiError = require('../utils/ApiError');
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         try {
-            if (env.STORAGE_PROVIDER === 's3' || env.NODE_ENV === 'production') {
+            if (['s3', 'gdrive'].includes(env.STORAGE_PROVIDER) || env.NODE_ENV === 'production') {
                 cb(null, os.tmpdir());
             } else {
                 cb(null, env.UPLOAD_DIR);

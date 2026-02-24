@@ -1,6 +1,6 @@
 # 🗂️ Drive Backend
 
-A production-ready **Google Drive–like** file storage REST API built with Node.js, Express, and PostgreSQL. Features hierarchical folder storage, file versioning, sharing with granular permissions, trash/soft-delete, full-text search, storage quota management, and pluggable cloud storage (local or S3).
+A production-ready **Google Drive–like** file storage REST API built with Node.js, Express, and PostgreSQL. Features hierarchical folder storage, file versioning, sharing with granular permissions, trash/soft-delete, full-text search, storage quota management, and pluggable cloud storage (local, S3, or **Google Drive**).
 
 ---
 
@@ -16,7 +16,7 @@ A production-ready **Google Drive–like** file storage REST API built with Node
 | **File Sharing** | Share with specific users (view/edit/admin) or via public link with optional password & expiry |
 | **Search** | Full-text search across files and folders with type/date/mime filters |
 | **Quota Management** | Per-user 15 GB default quota with real-time tracking |
-| **Cloud Storage** | Pluggable storage layer — local filesystem or AWS S3 |
+| **Cloud Storage** | Pluggable storage layer — local filesystem, AWS S3, or **Google Drive** |
 | **Rate Limiting** | Per-endpoint rate limiting (auth, upload, general) |
 | **Database Migrations** | Sequelize CLI migrations for reproducible schema changes |
 
@@ -30,7 +30,7 @@ A production-ready **Google Drive–like** file storage REST API built with Node
 - **Database**: PostgreSQL (Neon, RDS, or local)
 - **Auth**: JSON Web Tokens (`jsonwebtoken` + `bcryptjs`)
 - **File Upload**: Multer
-- **Cloud Storage**: AWS SDK v3 (`@aws-sdk/client-s3`)
+- **Cloud Storage**: AWS SDK v3 (`@aws-sdk/client-s3`) · Google APIs (`googleapis`)
 - **Logging**: Winston + Morgan
 - **Testing**: Jest + Supertest
 
@@ -72,7 +72,8 @@ drive-backend/
 │   │   ├── storage.service.js    # Storage adapter factory
 │   │   └── storage/
 │   │       ├── local.adapter.js  # Local filesystem adapter
-│   │       └── s3.adapter.js     # AWS S3 adapter
+│   │       ├── s3.adapter.js     # AWS S3 adapter
+│   │       └── gdrive.adapter.js # Google Drive adapter (OAuth2)
 │   └── utils/
 ├── tests/
 │   ├── setup.js                  # Test DB setup & teardown
@@ -320,15 +321,63 @@ curl "http://localhost:3000/api/search?q=report&type=file&mimeType=application/p
 | `DB_SSL` | No | Auto | Enable SSL (auto-enabled if DATABASE_URL is set) |
 | `JWT_SECRET` | **Yes** | — | Secret key for JWT signing |
 | `JWT_EXPIRES_IN` | No | `7d` | JWT expiration time |
-| `STORAGE_PROVIDER` | No | `local` | Storage backend: `local` or `s3` |
+| `STORAGE_PROVIDER` | No | `local` | Storage backend: `local`, `s3`, or `gdrive` |
 | `UPLOAD_DIR` | No | `./uploads` | Local upload directory |
-| `MAX_FILE_SIZE` | No | `52428800` | Max file size in bytes (50 MB) |
+| `MAX_FILE_SIZE` | No | `524288000` | Max file size in bytes (500 MB) |
 | `AWS_REGION` | If S3 | — | AWS region |
 | `AWS_ACCESS_KEY_ID` | If S3 | — | AWS access key |
 | `AWS_SECRET_ACCESS_KEY` | If S3 | — | AWS secret key |
 | `AWS_S3_BUCKET` | If S3 | — | S3 bucket name |
+| `GOOGLE_CLIENT_ID` | If gdrive | — | Google OAuth2 client ID |
+| `GOOGLE_CLIENT_SECRET` | If gdrive | — | Google OAuth2 client secret |
+| `GOOGLE_REFRESH_TOKEN` | If gdrive | — | OAuth2 refresh token (from auth script) |
+| `GOOGLE_DRIVE_FOLDER_ID` | If gdrive | — | Target Google Drive folder ID |
 
 *Either `DATABASE_URL` or the individual `DB_*` variables are required.
+
+---
+
+## 🔗 Google Drive Storage Setup
+
+To use Google Drive as the storage backend:
+
+### 1. Create Google Cloud Credentials
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Create a project (or select an existing one)
+3. Enable the **Google Drive API**: [APIs & Services → Library → Drive API](https://console.cloud.google.com/apis/library/drive.googleapis.com)
+4. Create OAuth2 credentials: **APIs & Services → Credentials → Create Credentials → OAuth Client ID**
+   - Application type: **Web application**
+   - Authorized redirect URIs: `http://localhost:9876/oauth2callback`
+5. Copy the **Client ID** and **Client Secret**
+
+### 2. Add yourself as a Test User
+
+If the app is in "Testing" mode:
+- Go to **OAuth consent screen → Test users → Add users**
+- Add your Google email
+
+### 3. Get a Refresh Token
+
+Run the one-time authorization script:
+
+```bash
+node scripts/gdrive-auth.js
+```
+
+This opens your browser for Google consent. After authorizing, it prints the `GOOGLE_REFRESH_TOKEN`.
+
+### 4. Configure Environment Variables
+
+```env
+STORAGE_PROVIDER=gdrive
+GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=GOCSPX-your-secret
+GOOGLE_REFRESH_TOKEN=1//0g...
+GOOGLE_DRIVE_FOLDER_ID=your-folder-id  # Optional — auto-creates if inaccessible
+```
+
+> **Note:** The adapter auto-creates a "Vault Files" folder in your Google Drive if the configured folder ID is inaccessible.
 
 ---
 
@@ -366,22 +415,20 @@ npx sequelize-cli db:migrate:status
 
 ## 🌐 Deployment
 
-### Recommended Free Stack
+### Recommended Stack
 
 | Service | Purpose |
 |---------|---------|
-| [**Render**](https://render.com) | Backend hosting (free tier) |
+| [**Vercel**](https://vercel.com) | Backend + Frontend hosting |
 | [**Neon**](https://neon.tech) | PostgreSQL database (free tier, 0.5 GB) |
-| [**Cloudflare R2**](https://www.cloudflare.com/r2/) | File storage (free 10 GB, S3-compatible) |
+| [**Google Drive**](https://drive.google.com) | File storage (15 GB free per account) |
 
-### Deploy to Render
+### Deploy to Vercel
 
 1. Push code to GitHub
-2. Create a **Web Service** on Render
-3. **Build Command:** `npm install`
-4. **Start Command:** `node src/server.js`
-5. Add environment variables (`DATABASE_URL`, `JWT_SECRET`, etc.)
-6. Deploy → Run migrations via Render Shell: `npm run migrate`
+2. Import both `drive-backend` and `drive-frontend` as Vercel projects
+3. Add environment variables in Vercel project settings
+4. Deploy
 
 ---
 
