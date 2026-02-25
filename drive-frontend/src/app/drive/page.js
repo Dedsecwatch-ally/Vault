@@ -77,6 +77,7 @@ export default function DrivePage() {
     const [trashItems, setTrashItems] = useState([]);
 
     const [uploading, setUploading] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
     const [showNewFolder, setShowNewFolder] = useState(false);
     const [newFolderName, setNewFolderName] = useState('');
     const [contextMenu, setContextMenu] = useState(null);
@@ -136,13 +137,14 @@ export default function DrivePage() {
         const fileList = e.target.files;
         if (!fileList?.length) return;
         setUploading(true);
+        setUploadProgress(0);
         try {
-            await api.uploadFiles(fileList, currentFolder, getEncryptionKey());
+            await api.uploadFiles(fileList, currentFolder, getEncryptionKey(), (percent) => setUploadProgress(percent));
             toast.success(`${fileList.length} file(s) uploaded`);
             loadContent(); refreshUser();
             api.getQuota().then(d => setQuota(d.data?.storage)).catch(() => { });
         } catch (err) { toast.error(err.message || 'Upload failed'); }
-        finally { setUploading(false); e.target.value = ''; }
+        finally { setUploading(false); setUploadProgress(0); e.target.value = ''; }
     };
 
     const handleDrop = async (e) => {
@@ -150,13 +152,14 @@ export default function DrivePage() {
         const droppedFiles = e.dataTransfer.files;
         if (!droppedFiles?.length) return;
         setUploading(true);
+        setUploadProgress(0);
         try {
-            await api.uploadFiles(droppedFiles, currentFolder, getEncryptionKey());
+            await api.uploadFiles(droppedFiles, currentFolder, getEncryptionKey(), (percent) => setUploadProgress(percent));
             toast.success(`${droppedFiles.length} file(s) uploaded`);
             loadContent(); refreshUser();
             api.getQuota().then(d => setQuota(d.data?.storage)).catch(() => { });
         } catch (err) { toast.error(err.message || 'Upload failed'); }
-        finally { setUploading(false); }
+        finally { setUploading(false); setUploadProgress(0); }
     };
 
     const handleCreateFolder = async () => {
@@ -332,7 +335,13 @@ export default function DrivePage() {
                 >
                     {uploading && (
                         <div className={s.uploadIndicator}>
-                            <Loader size={14} className="spinner" /> Uploading files...
+                            <div className={s.uploadInfo}>
+                                <Loader size={14} className="spinner" />
+                                <span>Uploading... {uploadProgress}%</span>
+                            </div>
+                            <div className={s.progressTrack}>
+                                <div className={s.progressBar} style={{ width: `${uploadProgress}%` }} />
+                            </div>
                         </div>
                     )}
 

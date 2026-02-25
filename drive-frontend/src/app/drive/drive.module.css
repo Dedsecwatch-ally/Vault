@@ -257,15 +257,37 @@
 
 .uploadIndicator {
     display: flex;
-    align-items: center;
+    flex-direction: column;
     gap: 8px;
-    padding: 10px 16px;
+    padding: 12px 16px;
     background: var(--accent-light);
     border-radius: var(--radius-sm);
     margin-bottom: 14px;
     font-size: 13px;
     color: var(--accent);
     border: 1px solid rgba(99, 102, 241, 0.15);
+}
+
+.uploadInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
+.progressTrack {
+    width: 100%;
+    height: 6px;
+    background: rgba(99, 102, 241, 0.12);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progressBar {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.2s ease;
 }
 
 /* Breadcrumbs */

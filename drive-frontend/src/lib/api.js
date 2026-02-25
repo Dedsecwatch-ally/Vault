@@ -108,7 +108,7 @@ class ApiClient {
         return this.request(`/api/files?${params}`);
     }
 
-    async uploadFiles(fileList, folderId = null, encryptionKey = null) {
+    async uploadFiles(fileList, folderId = null, encryptionKey = null, onProgress = null) {
         const formData = new FormData();
 
         // Handle both FileList and Array
@@ -118,7 +118,6 @@ class ApiClient {
 
         for (const file of files) {
             if (encryptionKey) {
-                // Encrypt file content before upload
                 const buffer = await file.arrayBuffer();
                 const encrypted = await encryptFile(encryptionKey, buffer);
                 const encryptedBlob = new Blob([encrypted], { type: file.type });
@@ -135,9 +134,36 @@ class ApiClient {
         if (folderId) formData.append('folderId', folderId);
         if (encryptionKey) formData.append('isEncrypted', 'true');
 
-        return this.request('/api/files/upload', {
-            method: 'POST',
-            body: formData,
+        // Use XHR for progress tracking
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${this.baseUrl}/api/files/upload`);
+
+            const token = this.getToken();
+            if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable && onProgress) {
+                    const percent = Math.round((e.loaded / e.total) * 100);
+                    onProgress(percent);
+                }
+            };
+
+            xhr.onload = () => {
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(data);
+                    } else {
+                        reject(new Error(data.message || `Upload failed (${xhr.status})`));
+                    }
+                } catch {
+                    reject(new Error(`Upload failed (${xhr.status})`));
+                }
+            };
+
+            xhr.onerror = () => reject(new Error('Network error during upload'));
+            xhr.send(formData);
         });
     }
 
